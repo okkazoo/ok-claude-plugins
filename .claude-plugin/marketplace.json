@@ -1,11 +1,14 @@
 {
   "name": "okkazoo-plugins",
-  "description": "OKKazoo's Claude Code plugins",
+  "owner": {
+    "name": "OKKazoo"
+  },
   "plugins": [
     {
       "name": "ok",
+      "source": "./",
       "description": "Persistent knowledge management with work-in-progress tracking, checkpoints, and auto-indexing",
-      "path": "."
+      "version": "1.0.0"
     }
   ]
 }
