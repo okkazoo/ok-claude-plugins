@@ -1,7 +1,7 @@
 {
-  "name": "knowledge-base",
+  "name": "ok",
   "version": "1.0.0",
   "description": "Persistent knowledge management with work-in-progress tracking, checkpoints, and auto-indexing for Claude Code projects",
-  "authors": ["Craig"],
-  "homepage": "https://github.com/yourusername/claude-knowledge-plugin"
+  "authors": ["OKKazoo"],
+  "homepage": "https://github.com/okkazoo/claude-knowledge-plugin"
 }

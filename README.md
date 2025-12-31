@@ -4,7 +4,7 @@ Persistent knowledge management for Claude Code projects with work-in-progress t
 
 ## Features
 
-- **Work-in-Progress Tracking**: Save progress between sessions with `/knowledge-base:wip`
+- **Work-in-Progress Tracking**: Save progress between sessions with `/ok:wip`
 - **Checkpoints**: Create restore points before risky changes
 - **Auto-Indexing**: Code symbols and knowledge automatically indexed
 - **Pre-Search Context**: Knowledge surfaced before searches via hooks
@@ -16,20 +16,20 @@ Persistent knowledge management for Claude Code projects with work-in-progress t
 /plugin marketplace add okkazoo/claude-knowledge-plugin
 
 # Install plugin
-/plugin install knowledge-base@claude-knowledge-plugin
+/plugin install ok@okkazoo/claude-knowledge-plugin
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/knowledge-base:init` | Initialize knowledge base in current project |
-| `/knowledge-base:wip` | Save work-in-progress |
-| `/knowledge-base:wip -f <text>` | Save a fact directly |
-| `/knowledge-base:wip -list` | List existing journeys |
-| `/knowledge-base:checkpoint [desc]` | Create restore point |
-| `/knowledge-base:knowledge` | Show knowledge base status |
-| `/knowledge-base:knowledge -reset` | Reset knowledge base |
+| `/ok:init` | Initialize knowledge base in current project |
+| `/ok:wip` | Save work-in-progress |
+| `/ok:wip -f <text>` | Save a fact directly |
+| `/ok:wip -list` | List existing journeys |
+| `/ok:checkpoint [desc]` | Create restore point |
+| `/ok:knowledge` | Show knowledge base status |
+| `/ok:knowledge -reset` | Reset knowledge base |
 
 ## Hooks
 
@@ -39,7 +39,7 @@ Persistent knowledge management for Claude Code projects with work-in-progress t
 
 ## Directory Structure
 
-After running `/knowledge-base:init`:
+After running `/ok:init`:
 
 ```
 .claude/knowledge/
@@ -55,9 +55,9 @@ After running `/knowledge-base:init`:
 ## Quick Start
 
 1. Install the plugin
-2. Run `/knowledge-base:init` in your project
-3. Use `/knowledge-base:wip` to save progress as you work
-4. Use `/knowledge-base:checkpoint` before risky changes
+2. Run `/ok:init` in your project
+3. Use `/ok:wip` to save progress as you work
+4. Use `/ok:checkpoint` before risky changes
 
 ## Authors
 
