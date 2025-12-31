@@ -1,0 +1,11 @@
+{
+  "name": "okkazoo-plugins",
+  "description": "OKKazoo's Claude Code plugins",
+  "plugins": [
+    {
+      "name": "ok",
+      "description": "Persistent knowledge management with work-in-progress tracking, checkpoints, and auto-indexing",
+      "path": "."
+    }
+  ]
+}
