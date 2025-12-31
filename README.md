@@ -61,7 +61,7 @@ After running `/knowledge-base:init`:
 
 ## Authors
 
-- Craig
+- OKKazoo
 
 ## License
 
