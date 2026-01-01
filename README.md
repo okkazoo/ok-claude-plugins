@@ -12,18 +12,29 @@ Persistent knowledge management for Claude Code projects with work-in-progress t
 
 ## Installation
 
-```bash
-# Add marketplace
-/plugin marketplace add okkazoo/claude-knowledge-plugin
+### From Marketplace (Recommended)
 
-# Install plugin
-/plugin install ok@okkazoo/claude-knowledge-plugin
+```bash
+# Add the marketplace (one-time setup)
+/plugins marketplace add okkazoo/claude-knowledge-plugin
+
+# Install the plugin
+/plugins install ok
 ```
 
-Or run locally:
+### From Local Source
+
+If you're developing or testing the plugin locally:
+
 ```bash
-claude --plugin-dir ~/Documents/Dev/claude-knowledge-plugin
+# Option 1: Run Claude with the plugin directory
+claude --plugin-dir /path/to/claude-knowledge-plugin
+
+# Option 2: Install locally for persistent use
+/plugins install /path/to/claude-knowledge-plugin
 ```
+
+**Important:** The plugin must be installed before running `/ok:init`. The init command reads from Claude's plugin registry (`~/.claude/plugins/installed_plugins.json`) to locate the helper scripts.
 
 ## Commands
 
@@ -87,10 +98,19 @@ After running `/ok:init`:
 
 ## Quick Start
 
-1. Install the plugin
-2. Run `/ok:init` in your project
-3. Use `/ok:wip` to save progress as you work
-4. Use `/ok:checkpoint` before risky changes
+1. **Install the plugin** (see Installation above)
+2. **Navigate to your project** directory in Claude Code
+3. **Run `/ok:init`** to set up the knowledge base structure
+4. **Use `/ok:wip`** to save progress as you work
+5. **Use `/ok:checkpoint`** before risky changes
+
+### Troubleshooting
+
+**"Could not find ok plugin"** - The plugin isn't installed. Run `/plugins install ok` first.
+
+**Helper script not copied** - If `/ok:init` completes but the helper script is missing, check that:
+- The plugin is in the registry: `cat ~/.claude/plugins/installed_plugins.json | grep ok`
+- Python 3 is available (used to parse the registry)
 
 ## Authors
 

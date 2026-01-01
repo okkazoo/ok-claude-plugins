@@ -1,8 +1,8 @@
 ---
 name: init
 description: Initialize knowledge base structure and CLAUDE.md in current project
-allowed-tools: Bash, Write, Read
-argument-hint: (no arguments)
+allowed-tools: Bash, Write, Read, AskUserQuestion
+argument-hint: [plugin-path]
 ---
 
 # Initialize Knowledge Base
@@ -45,26 +45,27 @@ If `.claude/knowledge/coderef.json` does NOT exist, create it:
 }
 ```
 
-### 3. Create Helper Script
+### 3. Install Helper Script
 
-**CRITICAL:** Read the `_wip_helpers.py` from THIS PLUGIN's `scripts/` directory and write it to `.claude/knowledge/journey/_wip_helpers.py`.
+**Step 3a:** Find the ok plugin in the registry:
+```bash
+cat ~/.claude/plugins/installed_plugins.json | grep -A3 '"ok@'
+```
 
-The plugin's script location is: `<plugin-dir>/scripts/_wip_helpers.py`
+This will show the `installPath`. Note the path shown.
 
-This script (~2700 lines) provides essential CLI commands:
-- `scan_categories` - List journey categories
-- `save_fact` - Save a fact file
-- `find_similar_facts` - Check for duplicates before saving
-- `create_entry` - Create journey entry with auto-timestamp
-- `knowledge_status` - Show knowledge base status
-- `search_patterns` - Search indexed patterns
-- `reset_knowledge` - Reset to factory defaults
-- ... and 25+ more utilities
-
-**You MUST copy the ENTIRE script.** Do not create a simplified version.
+**Step 3b:** Copy the helper script from that path. The path format depends on platform:
+- **Linux/Mac**: Use the path directly
+- **Windows Git Bash**: Convert `C:\\Users\\...` to `/c/Users/...`
 
 ```bash
-# Verify the script was created
+cp "<PLUGIN_PATH>/scripts/_wip_helpers.py" .claude/knowledge/journey/
+```
+
+Replace `<PLUGIN_PATH>` with the actual path from step 3a (converted if on Windows).
+
+**Step 3c:** Verify the script was copied:
+```bash
 [ -f ".claude/knowledge/journey/_wip_helpers.py" ] && echo "Helper script installed" || echo "ERROR: Helper script missing"
 ```
 
