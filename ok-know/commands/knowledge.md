@@ -2,7 +2,7 @@
 name: knowledge
 description: Show knowledge base status, recent entries, and project state.
 allowed-tools: Bash, AskUserQuestion
-argument-hint: -full | -reset
+argument-hint: -reset
 ---
 
 # Knowledge Base Status

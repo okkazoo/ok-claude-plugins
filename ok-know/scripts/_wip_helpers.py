@@ -893,8 +893,6 @@ def get_knowledge_status() -> str:
         lines.append("")
         lines.append("")
 
-    lines.append("Commands: .wip  .save  .knowledge")
-
     return '\n'.join(lines)
 
 
