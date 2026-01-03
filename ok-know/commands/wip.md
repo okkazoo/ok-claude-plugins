@@ -98,9 +98,9 @@ wip                  Autonomous mode - analyzes FULL conversation context
    <full fact text>
    ```
 
-4. **Confirm to user:**
+4. **Confirm to user** (use blue for facts):
    ```
-   Saved to facts/YYYY-MM-DD-<slug>.md
+   \033[94mSaved to facts/YYYY-MM-DD-<slug>.md\033[0m
    ```
 
 ---
@@ -283,22 +283,25 @@ For each journey topic selected:
 
 ### Step 5: Show Summary
 
-After saving all selected items:
+After saving all selected items, use color coding:
+- **Facts**: Blue (`\033[94m`)
+- **Journeys**: Green (`\033[92m`)
+- Reset: `\033[0m`
 
 ```
 Saved:
 
-  [F1] Fact: "On Windows use python not python3"
-        → facts/2024-12-21-windows-python.md
+  \033[94m[F1] Fact: "On Windows use python not python3"
+        → facts/2024-12-21-windows-python.md\033[0m
 
-  [1] auth-token-refresh
+  \033[92m[J1] auth-token-refresh
         → authentication/token-refresh/2024-12-21-15-30-oauth-cookies.md
-        Key learnings: JWT failed (CORS), HTTP-only cookies work
+        Key learnings: JWT failed (CORS), HTTP-only cookies work\033[0m
 
-  [2] database-migration
-        → infrastructure/database-migration/2024-12-21-15-30-user-prefs.md
+  \033[92m[J2] database-migration
+        → infrastructure/database-migration/2024-12-21-15-30-user-prefs.md\033[0m
 
-Total: 1 fact, 2 journeys saved
+Total: \033[94m1 fact\033[0m, \033[92m2 journeys\033[0m saved
 ```
 
 ---

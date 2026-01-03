@@ -661,6 +661,11 @@ def get_knowledge_status() -> str:
     from pathlib import Path
     import subprocess
 
+    # ANSI color codes
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    RESET = '\033[0m'
+
     # Gather git info
     try:
         result = subprocess.run(['git', 'rev-parse', '--git-dir'],
@@ -770,12 +775,12 @@ def get_knowledge_status() -> str:
     # Stats (no icons)
     lines.append("Stats")
     lines.append(dotted_line)
-    lines.append(f"Journeys: {journey_count}  |  Facts: {facts_count}  |  Savepoints: {savepoint_count}")
+    lines.append(f"{GREEN}Journeys: {journey_count}{RESET}  |  {BLUE}Facts: {facts_count}{RESET}  |  Savepoints: {savepoint_count}")
     lines.append("")
     lines.append("")
 
-    # Facts first (flat list, no icons)
-    lines.append("FACTS")
+    # Facts first (flat list, no icons) - BLUE
+    lines.append(f"{BLUE}FACTS{RESET}")
     lines.append(dotted_line)
     if facts_detail:
         # Get all fact files for flat list
@@ -783,23 +788,23 @@ def get_knowledge_status() -> str:
         if facts_dir_path.exists():
             all_facts = sorted([f.name for f in facts_dir_path.glob('*.md') if not f.name.startswith('.')], reverse=True)
             for fact_name in all_facts:
-                lines.append(fact_name)
+                lines.append(f"{BLUE}{fact_name}{RESET}")
     else:
         lines.append("No facts yet.")
     lines.append("")
     lines.append("")
 
-    # Journeys (tree structure, no icons, no _meta.md)
-    lines.append("JOURNEYS")
+    # Journeys (tree structure, no icons, no _meta.md) - GREEN
+    lines.append(f"{GREEN}JOURNEYS{RESET}")
     lines.append(dotted_line)
     if journeys_detail:
         for cat_idx, cat in enumerate(journeys_detail):
-            lines.append(f"{cat['category']}/")
+            lines.append(f"{GREEN}{cat['category']}/{RESET}")
             journeys_in_cat = cat['journeys']
             for j_idx, j in enumerate(journeys_in_cat):
                 is_last_journey = (j_idx == len(journeys_in_cat) - 1)
                 j_prefix = "└── " if is_last_journey else "├── "
-                lines.append(f"{j_prefix}{j['name']}/")
+                lines.append(f"{GREEN}{j_prefix}{j['name']}/{RESET}")
 
                 # Get entry files for this journey (exclude _meta.md)
                 journey_path = Path(f".claude/knowledge/journey/{cat['category']}/{j['name']}")
@@ -812,7 +817,7 @@ def get_knowledge_status() -> str:
                         else:
                             e_indent = "│   "
                         e_prefix = "└── " if is_last_entry else "├── "
-                        lines.append(f"{e_indent}{e_prefix}{entry_name}")
+                        lines.append(f"{GREEN}{e_indent}{e_prefix}{entry_name}{RESET}")
 
             # Add blank line between categories (except last)
             if cat_idx < len(journeys_detail) - 1:
