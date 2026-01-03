@@ -2188,11 +2188,10 @@ if __name__ == '__main__':
         # Open in new window based on platform (non-blocking)
         system = platform.system()
         if system == 'Windows':
-            # Use subprocess to open new cmd window in background with UTF-8
+            # Use 'start' command which reliably opens new window in foreground
             subprocess.Popen(
-                f'cmd /k "chcp 65001 >nul && type {temp_file} && echo. && echo Press any key to close... && pause >nul"',
-                shell=True,
-                creationflags=subprocess.CREATE_NEW_CONSOLE
+                f'start "Knowledge Status" cmd /k "chcp 65001 >nul && type {temp_file} && echo. && echo Press any key to close... && pause >nul"',
+                shell=True
             )
         elif system == 'Darwin':  # macOS
             subprocess.Popen(['open', '-a', 'Terminal', str(temp_file)])
