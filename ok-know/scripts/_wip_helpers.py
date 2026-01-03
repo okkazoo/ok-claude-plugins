@@ -787,7 +787,9 @@ def get_knowledge_status() -> str:
         if facts_dir_path.exists():
             all_facts = sorted([f.name for f in facts_dir_path.glob('*.md') if not f.name.startswith('.')], reverse=True)
             for fact_name in all_facts:
-                lines.append(fact_name)
+                # Remove .md extension for cleaner display
+                display_name = fact_name[:-3] if fact_name.endswith('.md') else fact_name
+                lines.append(display_name)
     else:
         lines.append("No facts yet.")
     lines.append("")
@@ -798,22 +800,35 @@ def get_knowledge_status() -> str:
     lines.append(f"{GREEN}{dotted_line}{RESET}")
     if journeys_detail:
         for cat_idx, cat in enumerate(journeys_detail):
-            # Category header
-            lines.append(f"{cat['category']}/")
+            # Category header (no trailing slash)
+            lines.append(cat['category'])
+            lines.append("│")
 
-            # Get all entry files for this category's journeys
-            journey_entries = []
-            for j in cat['journeys']:
+            journeys = cat['journeys']
+            for j_idx, j in enumerate(journeys):
+                is_last_journey = (j_idx == len(journeys) - 1)
+                journey_prefix = "└── " if is_last_journey else "├── "
+
+                # Journey topic name (no trailing slash)
+                lines.append(f"{journey_prefix}{j['name']}")
+
+                # Get entry files for this journey
                 journey_path = Path(f".claude/knowledge/journey/{cat['category']}/{j['name']}")
                 if journey_path.exists():
-                    entry_files = sorted([f.name for f in journey_path.glob('*.md') if f.name != '_meta.md'])
-                    journey_entries.extend(entry_files)
+                    entry_files = sorted(
+                        [f.name for f in journey_path.glob('*.md') if f.name != '_meta.md'],
+                        reverse=True
+                    )
+                    # Entry indent: 8 spaces to align under topic name
+                    entry_indent = "        "
+                    for entry_name in entry_files:
+                        # Remove .md extension for cleaner display
+                        display_name = entry_name[:-3] if entry_name.endswith('.md') else entry_name
+                        lines.append(f"{entry_indent}{display_name}")
 
-            # Display entries with tree structure
-            for e_idx, entry_name in enumerate(journey_entries):
-                is_last = (e_idx == len(journey_entries) - 1)
-                prefix = "└── " if is_last else "├── "
-                lines.append(f"{prefix}{entry_name}")
+                # Add blank line with │ after each topic (except last in category)
+                if not is_last_journey:
+                    lines.append("│")
 
             # Blank line between categories (except last)
             if cat_idx < len(journeys_detail) - 1:

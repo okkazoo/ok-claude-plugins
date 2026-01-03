@@ -108,7 +108,7 @@ wip                  Autonomous mode - analyzes FULL conversation context
 
    FACTS [1]
    ··································
-   YYYY-MM-DD-<slug>.md
+   YYYY-MM-DD-<slug>
 
    Total: 1 fact saved
    ```
@@ -315,15 +315,19 @@ Saved:
 
 FACTS [1]                                ← Blue
 ··································       ← Blue
-2024-12-21-windows-python.md
+2024-12-21-windows-python
 
 JOURNEYS [2]                             ← Green
 ··································       ← Green
-authentication/
-└── 2024-12-21-oauth-refresh-fix.md
+authentication
+│
+└── oauth-refresh
+        2024-12-21-oauth-refresh-fix
 
-infrastructure/
-└── 2024-12-21-database-migration.md
+infrastructure
+│
+└── database-migration
+        2024-12-21-database-migration
 
 Total: 1 fact, 2 journeys saved
 ```
@@ -333,16 +337,23 @@ Apply colors:
 - "JOURNEYS [N]" header and its dotted line: green (`\033[92m`)
 - All content (filenames, tree structure): default/white
 
-**Multiple entries under same category:**
+**Multiple topics under same category:**
 ```
 JOURNEYS [3]                             ← Green
 ··································       ← Green
-authentication/
-├── 2024-12-21-oauth-refresh-fix.md
-└── 2024-12-21-jwt-migration.md
+authentication
+│
+├── oauth-refresh
+│       2024-12-21-silent-refresh
+│       2024-12-21-oauth-refresh-fix
+│
+└── jwt-migration
+        2024-12-21-jwt-migration
 
-api-integration/
-└── 2024-12-21-rate-limiting-setup.md
+api-integration
+│
+└── rate-limiting
+        2024-12-21-rate-limiting-setup
 ```
 
 ---
@@ -358,7 +369,7 @@ Saved:
 
 FACTS [1]                                ← Blue
 ··································       ← Blue
-2024-12-21-windows-python-shebang.md
+2024-12-21-windows-python-shebang
 
 Total: 1 fact saved
 ```
@@ -389,15 +400,19 @@ Saved:
 
 FACTS [1]                                ← Blue (Phase 2)
 ··································       ← Blue
-2024-12-21-api-rate-limit.md
+2024-12-21-api-rate-limit
 
 JOURNEYS [2]                             ← Green (Phase 2)
 ··································       ← Green
-authentication/
-└── 2024-12-21-oauth-refresh.md
+authentication
+│
+└── oauth-refresh
+        2024-12-21-oauth-refresh
 
-infrastructure/
-└── 2024-12-21-database-migration.md
+infrastructure
+│
+└── database-migration
+        2024-12-21-database-migration
 
 Total: 1 fact, 2 journeys saved
 ```
@@ -426,12 +441,14 @@ Saved:
 
 FACTS [1]                                ← Blue (Phase 2)
 ··································       ← Blue
-2024-12-21-api-rate-limit.md
+2024-12-21-api-rate-limit
 
 JOURNEYS [1]                             ← Green (Phase 2)
 ··································       ← Green
-wip-command/
-└── 2024-12-21-ui-refactor.md
+wip-command
+│
+└── ui-refactor
+        2024-12-21-ui-refactor
 
 Total: 1 fact, 1 journey saved
 ```
