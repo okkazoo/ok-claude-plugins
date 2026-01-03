@@ -10,10 +10,17 @@ This script provides utilities for:
 import json
 import os
 import shutil
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 import re
+
+
+# ANSI color codes for terminal output
+BLUE = '\033[94m'
+GREEN = '\033[92m'
+RESET = '\033[0m'
 
 
 # ============================================================================
@@ -660,11 +667,6 @@ def get_knowledge_status() -> str:
     """
     from pathlib import Path
     import subprocess
-
-    # ANSI color codes
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    RESET = '\033[0m'
 
     # Gather git info
     try:
