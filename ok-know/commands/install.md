@@ -11,32 +11,28 @@ Sets up the `.claude/knowledge/` directory structure for persistent project know
 
 ## Instructions
 
-### 1. Check if Already Installed
+### 1. Check Installation Status
 
 ```bash
-[ -d ".claude/knowledge" ] && echo "EXISTS" || echo "NEW"
+echo "=== Checking knowledge base ===" && \
+[ -d ".claude/knowledge" ] && echo "DIR:EXISTS" || echo "DIR:NEW" && \
+[ -d ".claude/knowledge/journey" ] && echo "JOURNEY:OK" || echo "JOURNEY:MISSING" && \
+[ -d ".claude/knowledge/facts" ] && echo "FACTS:OK" || echo "FACTS:MISSING" && \
+[ -d ".claude/knowledge/patterns" ] && echo "PATTERNS:OK" || echo "PATTERNS:MISSING" && \
+[ -d ".claude/knowledge/savepoints" ] && echo "SAVEPOINTS:OK" || echo "SAVEPOINTS:MISSING" && \
+[ -f ".claude/knowledge/knowledge.json" ] && echo "INDEX:OK" || echo "INDEX:MISSING"
 ```
 
-**If EXISTS**, respond:
-```
-Knowledge base already installed.
+**Evaluate the output:**
 
-Use /ok-know:knowledge to see status.
-```
-Then stop - do not continue to other steps.
+- **If DIR:NEW** → Fresh install, continue to step 2
+- **If any MISSING** → Repair install, continue to step 2
+- **If all OK** → Existing install, skip to step 3 (rebuild index)
 
-**If NEW**, continue to step 2.
-
-### 2. Create Directory Structure
+### 2. Create/Repair Directory Structure
 
 ```bash
 mkdir -p .claude/knowledge/journey .claude/knowledge/facts .claude/knowledge/patterns .claude/knowledge/savepoints
-```
-
-### 3. Create Index Files
-
-```bash
-[ -f ".claude/knowledge/knowledge.json" ] && echo "knowledge.json exists" || echo "creating knowledge.json"
 ```
 
 If `.claude/knowledge/knowledge.json` does NOT exist, create it:
@@ -49,8 +45,17 @@ If `.claude/knowledge/knowledge.json` does NOT exist, create it:
 }
 ```
 
+### 3. Rebuild Knowledge Index
+
+Always run this to ensure knowledge.json is populated with existing content:
+
+```bash
+python "C:\Users\craig\.claude\plugins\cache\okkazoo-plugins\ok-know\1.8.7/scripts/_wip_helpers.py" rebuild_knowledge_index
+```
+
 ### 4. Confirm
 
+**For fresh/repaired install:**
 ```
 Knowledge base installed!
 
@@ -66,4 +71,11 @@ Commands:
   /ok-know:wip -f       Save a fact directly
   /ok-know:save         Create restore point
   /ok-know:knowledge    Show status
+```
+
+**For existing install (all OK):**
+```
+Knowledge base verified and index rebuilt.
+
+Use /ok-know:knowledge to see status.
 ```
