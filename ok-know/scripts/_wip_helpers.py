@@ -2193,18 +2193,48 @@ if __name__ == '__main__':
             batch_file = Path(tempfile.gettempdir()) / 'claude_knowledge_view.bat'
             batch_content = f'''@echo off
 chcp 65001 >nul
+mode con: cols=100 lines=50
 type "{temp_file}"
 echo.
 pause
 '''
             batch_file.write_text(batch_content, encoding='utf-8')
             os.startfile(str(batch_file))
+
         elif system == 'Darwin':  # macOS
-            subprocess.Popen(['open', '-a', 'Terminal', str(temp_file)])
+            # Create a shell script that displays with colors
+            script_file = Path(tempfile.gettempdir()) / 'claude_knowledge_view.sh'
+            script_content = f'''#!/bin/bash
+cat "{temp_file}"
+echo ""
+read -p "Press Enter to close..."
+'''
+            script_file.write_text(script_content, encoding='utf-8')
+            os.chmod(script_file, 0o755)
+            # Open in Terminal.app
+            subprocess.Popen(['open', '-a', 'Terminal', str(script_file)])
+
         else:  # Linux
-            for term in ['gnome-terminal', 'xterm', 'konsole']:
-                if shutil.which(term):
-                    subprocess.Popen([term, '-e', f'cat {temp_file}; read -p "Press Enter to close..."'])
+            # Create a shell script
+            script_file = Path(tempfile.gettempdir()) / 'claude_knowledge_view.sh'
+            script_content = f'''#!/bin/bash
+cat "{temp_file}"
+echo ""
+read -p "Press Enter to close..."
+'''
+            script_file.write_text(script_content, encoding='utf-8')
+            os.chmod(script_file, 0o755)
+
+            # Try common terminal emulators
+            terminals = [
+                ['gnome-terminal', '--', str(script_file)],
+                ['konsole', '-e', str(script_file)],
+                ['xfce4-terminal', '-e', str(script_file)],
+                ['xterm', '-e', str(script_file)],
+            ]
+            for term_cmd in terminals:
+                if shutil.which(term_cmd[0]):
+                    subprocess.Popen(term_cmd)
                     break
 
         print("Opened in external window.")
