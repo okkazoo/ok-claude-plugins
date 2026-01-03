@@ -2174,7 +2174,7 @@ if __name__ == '__main__':
         print(get_knowledge_patterns())
 
     elif command == 'knowledge_window':
-        # Open knowledge status in a separate terminal window
+        # Open knowledge status in a separate terminal window (runs in background)
         import tempfile
         import platform
 
@@ -2185,18 +2185,21 @@ if __name__ == '__main__':
         temp_file = Path(tempfile.gettempdir()) / 'claude_knowledge_status.txt'
         temp_file.write_text(content, encoding='utf-8')
 
-        # Open in new window based on platform
+        # Open in new window based on platform (non-blocking)
         system = platform.system()
         if system == 'Windows':
-            # Use start to open new cmd window with UTF-8 encoding
-            os.system(f'start cmd /k "chcp 65001 >nul && type {temp_file} && echo. && echo Press any key to close... && pause >nul"')
+            # Use subprocess to open new cmd window in background with UTF-8
+            subprocess.Popen(
+                f'cmd /k "chcp 65001 >nul && type {temp_file} && echo. && echo Press any key to close... && pause >nul"',
+                shell=True,
+                creationflags=subprocess.CREATE_NEW_CONSOLE
+            )
         elif system == 'Darwin':  # macOS
-            os.system(f'open -a Terminal "{temp_file}"')
+            subprocess.Popen(['open', '-a', 'Terminal', str(temp_file)])
         else:  # Linux
-            # Try common terminals
             for term in ['gnome-terminal', 'xterm', 'konsole']:
                 if shutil.which(term):
-                    os.system(f'{term} -e "cat {temp_file}; read -p \\"Press Enter to close...\\"" &')
+                    subprocess.Popen([term, '-e', f'cat {temp_file}; read -p "Press Enter to close..."'])
                     break
 
         print("Opened in external window.")
