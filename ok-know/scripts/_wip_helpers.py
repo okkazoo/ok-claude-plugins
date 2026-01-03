@@ -2189,8 +2189,16 @@ if __name__ == '__main__':
         # Open in new window based on platform (non-blocking)
         system = platform.system()
         if system == 'Windows':
-            # Open the temp file with default text editor (notepad)
-            os.startfile(str(temp_file))
+            # Create a batch file that opens CMD with colors
+            batch_file = Path(tempfile.gettempdir()) / 'claude_knowledge_view.bat'
+            batch_content = f'''@echo off
+chcp 65001 >nul
+type "{temp_file}"
+echo.
+pause
+'''
+            batch_file.write_text(batch_content, encoding='utf-8')
+            os.startfile(str(batch_file))
         elif system == 'Darwin':  # macOS
             subprocess.Popen(['open', '-a', 'Terminal', str(temp_file)])
         else:  # Linux
