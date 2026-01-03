@@ -18,6 +18,32 @@ Before:
 
 ## Instructions
 
+### 0. Check for Git Repository
+
+First, verify this is a git repository:
+
+```bash
+git rev-parse --git-dir 2>/dev/null || echo "NOT_A_GIT_REPO"
+```
+
+If the output is `NOT_A_GIT_REPO`, use AskUserQuestion:
+```json
+{
+  "questions": [{
+    "question": "This directory is not a git repository. The /save command requires git. What would you like to do?",
+    "header": "No Git Repo",
+    "multiSelect": false,
+    "options": [
+      {"label": "Initialize git", "description": "Run 'git init' to create a repository here"},
+      {"label": "Skip save", "description": "Cancel the save operation"}
+    ]
+  }]
+}
+```
+
+- If "Initialize git": Run `git init` and continue with the save
+- If "Skip save": End with message "Save cancelled - no git repository"
+
 ### 1. Capture Current State
 
 ```bash
