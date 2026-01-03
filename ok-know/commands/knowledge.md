@@ -2,7 +2,7 @@
 name: knowledge
 description: Show knowledge base status, recent entries, and project state.
 allowed-tools: Bash, AskUserQuestion
-argument-hint: -reset
+argument-hint: [-audit|-reset]
 model: haiku
 ---
 
@@ -11,6 +11,7 @@ model: haiku
 ## Arguments
 
 - No argument: Show knowledge base status (tree view with details)
+- `-audit`: Audit knowledge base for issues (redundant facts, consolidation opportunities, orphaned references)
 - `-reset`: Reset knowledge base to factory defaults (with options)
 
 ## Instructions
@@ -25,6 +26,17 @@ fi
 ```
 
 ### Check argument and run appropriate command
+
+**If argument is `-audit`:**
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/_wip_helpers.py" audit_knowledge
+```
+Display the audit report EXACTLY as returned, then if issues were found, use **AskUserQuestion** to ask if user wants to:
+- **Fix automatically** - Merge redundant facts, consolidate journeys, clean orphaned refs
+- **Show details** - Explain each issue in more detail
+- **Cancel** - Take no action
+
+---
 
 **If argument is `-reset`:**
 
@@ -46,7 +58,17 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/_wip_helpers.py" reset_knowledge
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/_wip_helpers.py" knowledge_status
 ```
-**IMPORTANT**: Display the command output EXACTLY as returned. Do NOT summarize, interpret, or add any commentary. Just show the raw output with its formatting preserved. The output already contains properly formatted status information.
+
+## CRITICAL OUTPUT RULES
+
+After running the command above:
+1. Display the command output EXACTLY as it appears
+2. **STOP** - Do NOT add any text after the output
+3. Do NOT summarize what you see
+4. Do NOT offer suggestions or next steps
+5. Do NOT interpret the data
+
+Your entire response after the bash command should be empty. The command output IS the response.
 
 ---
 
