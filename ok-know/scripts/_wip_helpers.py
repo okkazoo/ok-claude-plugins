@@ -808,17 +808,13 @@ def get_knowledge_status() -> str:
     lines.append(f"{GREEN}{dotted_line}{RESET}")
     if journeys_detail:
         for cat_idx, cat in enumerate(journeys_detail):
-            # Category header (no trailing slash)
+            # Category header (green, no indent)
             lines.append(f"{GREEN}{cat['category']}{RESET}")
-            lines.append(TREE_PIPE)
 
             journeys = cat['journeys']
             for j_idx, j in enumerate(journeys):
-                is_last_journey = (j_idx == len(journeys) - 1)
-                journey_prefix = TREE_LAST + " " if is_last_journey else TREE_BRANCH + " "
-
-                # Journey topic name (no trailing slash)
-                lines.append(f"{journey_prefix}{j['name']}")
+                # Journey topic name (2 space indent)
+                lines.append(f"  {j['name']}")
 
                 # Get entry files for this journey
                 journey_path = Path(f".claude/knowledge/journey/{cat['category']}/{j['name']}")
@@ -827,18 +823,16 @@ def get_knowledge_status() -> str:
                         [f.name for f in journey_path.glob('*.md') if f.name != '_meta.md'],
                         reverse=True
                     )
-                    # Entry indent: 8 spaces to align under topic name
-                    entry_indent = "        "
+                    # Entry indent: 4 spaces
                     for entry_name in entry_files:
-                        # Remove .md extension for cleaner display
                         display_name = entry_name[:-3] if entry_name.endswith('.md') else entry_name
-                        lines.append(f"{entry_indent}{display_name}")
+                        lines.append(f"    {display_name}")
 
-                # Add blank line with pipe after each topic (except last in category)
-                if not is_last_journey:
-                    lines.append(TREE_PIPE)
+                # Blank line between journeys (except last in category)
+                if j_idx < len(journeys) - 1:
+                    lines.append("")
 
-            # Blank line between categories (except last)
+            # Blank line between categories
             if cat_idx < len(journeys_detail) - 1:
                 lines.append("")
     else:
@@ -1021,14 +1015,13 @@ def get_knowledge_journeys() -> str:
 
     if journeys_detail:
         for cat_idx, cat in enumerate(journeys_detail):
+            # Category header (green, no indent)
             lines.append(f"{GREEN}{cat['category']}{RESET}")
-            lines.append(TREE_PIPE)
 
             journeys = cat['journeys']
             for j_idx, j in enumerate(journeys):
-                is_last_journey = (j_idx == len(journeys) - 1)
-                journey_prefix = TREE_LAST + " " if is_last_journey else TREE_BRANCH + " "
-                lines.append(f"{journey_prefix}{j['name']}")
+                # Journey topic name (2 space indent)
+                lines.append(f"  {j['name']}")
 
                 journey_path = Path(f".claude/knowledge/journey/{cat['category']}/{j['name']}")
                 if journey_path.exists():
@@ -1036,14 +1029,16 @@ def get_knowledge_journeys() -> str:
                         [f.name for f in journey_path.glob('*.md') if f.name != '_meta.md'],
                         reverse=True
                     )
-                    entry_indent = "        "
+                    # Entry indent: 4 spaces
                     for entry_name in entry_files:
                         display_name = entry_name[:-3] if entry_name.endswith('.md') else entry_name
-                        lines.append(f"{entry_indent}{display_name}")
+                        lines.append(f"    {display_name}")
 
-                if not is_last_journey:
-                    lines.append(TREE_PIPE)
+                # Blank line between journeys (except last in category)
+                if j_idx < len(journeys) - 1:
+                    lines.append("")
 
+            # Blank line between categories
             if cat_idx < len(journeys_detail) - 1:
                 lines.append("")
     else:
