@@ -25,8 +25,8 @@ RESET = '\033[0m'
 # ASCII characters for tree drawing (works on all terminals)
 DOTTED_LINE = '-' * 34
 TREE_PIPE = '|'
-TREE_BRANCH = '+--'
-TREE_LAST = '+--'
+TREE_BRANCH = '---'
+TREE_LAST = '---'
 
 
 # ============================================================================
@@ -809,7 +809,7 @@ def get_knowledge_status() -> str:
     if journeys_detail:
         for cat_idx, cat in enumerate(journeys_detail):
             # Category header (no trailing slash)
-            lines.append(cat['category'])
+            lines.append(f"{GREEN}{cat['category']}{RESET}")
             lines.append(TREE_PIPE)
 
             journeys = cat['journeys']
@@ -1021,7 +1021,7 @@ def get_knowledge_journeys() -> str:
 
     if journeys_detail:
         for cat_idx, cat in enumerate(journeys_detail):
-            lines.append(cat['category'])
+            lines.append(f"{GREEN}{cat['category']}{RESET}")
             lines.append(TREE_PIPE)
 
             journeys = cat['journeys']
@@ -2194,9 +2194,9 @@ if __name__ == '__main__':
         # Open in new window based on platform (non-blocking)
         system = platform.system()
         if system == 'Windows':
-            # Use 'start' command which reliably opens new window in foreground
+            # Use 'start' command - window stays open for reading, close manually when done
             subprocess.Popen(
-                f'start "Knowledge Status" cmd /k "chcp 65001 >nul && type {temp_file} && echo. && echo Press any key to close... && pause >nul"',
+                f'start "Knowledge Status" cmd /k "chcp 65001 >nul && type {temp_file} && echo."',
                 shell=True
             )
         elif system == 'Darwin':  # macOS
