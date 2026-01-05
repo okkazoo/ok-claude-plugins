@@ -1816,8 +1816,8 @@ def rebuild_knowledge_index() -> Dict:
                 if 'context:' in line.lower():
                     match = re.search(r'context:\s*(.+?)(?:\s*$|\s*-)', line, re.IGNORECASE)
                     if match:
-                        kws = [k.strip().lower() for k in match.group(1).split(',')]
-                        keywords.update(k for k in kws if k and k not in ['keyword1', 'keyword2', 'keyword3'])
+                        kws = [re.sub(r'[\[\](){}]', '', k).strip().lower() for k in match.group(1).split(',')]
+                        keywords.update(k for k in kws if k and k not in ['keyword1', 'keyword2', 'keyword3'] and len(k) > 1)
 
             # Add category and topic as keywords
             keywords.add(file_info['category'].lower())
@@ -1836,7 +1836,13 @@ def rebuild_knowledge_index() -> Dict:
                     for line in meta_content.split('\n'):
                         if line.lower().startswith('keywords:'):
                             kws = line.split(':', 1)[1].strip()
-                            keywords.update(k.strip().lower() for k in kws.split(',') if k.strip())
+                            # Strip outer brackets if present (e.g., "[frontend, react, ...]")
+                            kws = re.sub(r'^\[|\]$', '', kws)
+                            keywords.update(
+                                re.sub(r'[\[\](){}]', '', k).strip().lower()
+                                for k in kws.split(',')
+                                if k.strip() and len(k.strip()) > 1
+                            )
         except:
             pass
 
