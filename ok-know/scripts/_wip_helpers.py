@@ -2437,7 +2437,7 @@ if __name__ == '__main__':
         print("")
         print("Audit commands:")
         print("  audit_knowledge          - Full knowledge base audit")
-        print("  rebuild_knowledge_index  - Rebuild index from actual files (fixes orphaned/unindexed)")
+        print("  rebuild_knowledge_index  - Rebuild index from actual files (alias: rebuild_index)")
         print("  find_similar_facts <txt> - Find facts similar to text (dupe-check)")
         print("")
         print("Meta commands:")
@@ -2630,7 +2630,8 @@ read -p "Press Enter to close..."
     elif command == 'audit_knowledge':
         print(audit_knowledge())
 
-    elif command == 'rebuild_knowledge_index':
+    elif command == 'rebuild_knowledge_index' or command == 'rebuild_index':
+        # 'rebuild_index' is an alias for 'rebuild_knowledge_index'
         result = rebuild_knowledge_index()
         print(json.dumps(result, indent=2))
 
