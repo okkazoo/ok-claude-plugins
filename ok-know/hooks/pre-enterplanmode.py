@@ -1,72 +1,108 @@
 #!/usr/bin/env python3
 """
-PreToolUse Hook: Surface knowledge before entering plan mode
+PreToolUse Hook: Search knowledge before entering plan mode
 
-When Claude enters plan mode, show relevant knowledge entries so
-Claude has existing context before designing an implementation plan.
+When Claude enters plan mode, search knowledge.json for relevant patterns
+and files based on conversation context, so Claude has existing knowledge
+before designing an implementation plan.
 """
 
 import json
 import sys
+import re
 from pathlib import Path
 
-
-def get_recent_journeys(limit=5):
-    """Get most recently modified journey files."""
-    journey_dir = Path('.claude/knowledge/journey')
-    if not journey_dir.exists():
-        return []
-
-    entries = []
-    for md_file in journey_dir.rglob('*.md'):
-        if md_file.name.startswith('_'):
-            continue
-        try:
-            mtime = md_file.stat().st_mtime
-            # Get relative path from journey dir
-            rel_path = md_file.relative_to(Path('.claude/knowledge'))
-            entries.append({
-                'mtime': mtime,
-                'path': str(rel_path),
-                'name': md_file.stem.replace('-', ' ').title()
-            })
-        except:
-            continue
-
-    entries.sort(key=lambda x: x['mtime'], reverse=True)
-    return entries[:limit]
+STOP_WORDS = {
+    'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'must', 'can', 'need', 'to', 'of', 'in',
+    'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through',
+    'this', 'that', 'these', 'those', 'it', 'its', 'i', 'me', 'my', 'you',
+    'your', 'we', 'our', 'they', 'them', 'their', 'what', 'which', 'who',
+    'how', 'why', 'when', 'where', 'and', 'but', 'or', 'if', 'then',
+    'use', 'using', 'find', 'search', 'look', 'check', 'get', 'make',
+    'help', 'want', 'need', 'please', 'plan', 'mode', 'enter', 'design',
+    'implement', 'implementation', 'create', 'add', 'feature', 'let',
+    'going', 'now', 'first', 'start', 'begin', 'approach', 'properly'
+}
 
 
-def get_patterns_summary():
-    """Get summary of available patterns."""
+def extract_keywords(text):
+    """Extract meaningful keywords from text."""
+    words = re.findall(r'[a-zA-Z0-9_-]+', text.lower())
+    keywords = set()
+    for word in words:
+        if len(word) >= 3 and word not in STOP_WORDS:
+            keywords.add(word)
+    return keywords
+
+
+def search_knowledge(keywords):
+    """Search knowledge.json for matching patterns and files."""
+    matches = {'patterns': [], 'files': []}
     knowledge_json = Path('.claude/knowledge/knowledge.json')
+
     if not knowledge_json.exists():
-        return None
+        return matches
 
     try:
         data = json.loads(knowledge_json.read_text(encoding='utf-8'))
-        patterns = data.get('patterns', [])
-
-        if not patterns:
-            return None
-
-        by_type = {}
-        for p in patterns:
-            ptype = p.get('type', 'other')
-            by_type[ptype] = by_type.get(ptype, 0) + 1
-
-        return by_type
     except:
-        return None
+        return matches
 
+    type_icons = {
+        'solution': '[OK]',
+        'tried-failed': '[X]',
+        'gotcha': '[!]',
+        'best-practice': '[*]'
+    }
 
-def get_facts_count():
-    """Count fact files."""
-    facts_dir = Path('.claude/knowledge/facts')
-    if not facts_dir.exists():
-        return 0
+    # Search patterns
+    for p in data.get('patterns', []):
+        pattern_text = p.get('pattern', '').lower()
+        context = p.get('context', '')
+        if isinstance(context, list):
+            context = ' '.join(context)
+        context = context.lower()
 
-    return len(list(facts_dir.glob('*.md')))
+        all_text = pattern_text + ' ' + context
+        overlap = sum(1 for kw in keywords if kw in all_text)
+
+        if overlap >= 2:
+            ptype = p.get('type', 'other')
+            icon = type_icons.get(ptype, '*')
+            matches['patterns'].append({
+                'score': overlap,
+                'text': f"{icon} {p.get('pattern', '')}",
+                'type': ptype
+            })
+
+    # Search files by keywords and title
+    for filepath, info in data.get('files', {}).items():
+        file_keywords = set(kw.lower() for kw in info.get('keywords', []))
+        title = info.get('title', filepath).lower()
+        description = info.get('description', '').lower()
+
+        # Score based on keyword overlap and title matches
+        kw_overlap = len(keywords & file_keywords)
+        title_overlap = sum(1 for kw in keywords if kw in title)
+        desc_overlap = sum(1 for kw in keywords if kw in description)
+        total_score = kw_overlap * 2 + title_overlap + desc_overlap
+
+        if total_score >= 2:
+            matched_kws = list(keywords & file_keywords)[:3]
+            matches['files'].append({
+                'score': total_score,
+                'path': filepath,
+                'title': info.get('title', filepath),
+                'keywords': matched_kws
+            })
+
+    # Sort by score
+    matches['patterns'].sort(key=lambda x: x['score'], reverse=True)
+    matches['files'].sort(key=lambda x: x['score'], reverse=True)
+
+    return matches
 
 
 def main():
@@ -77,34 +113,79 @@ def main():
         return
 
     # Check if knowledge base exists
-    knowledge_dir = Path('.claude/knowledge')
-    if not knowledge_dir.exists():
+    knowledge_json = Path('.claude/knowledge/knowledge.json')
+    if not knowledge_json.exists():
         print(json.dumps({"continue": True}))
         return
 
-    msg_parts = [">> KNOWLEDGE BASE AVAILABLE - Check before planning:"]
+    # Extract context from conversation
+    # The hook receives conversation_context or we can look at recent messages
+    context_text = ""
 
-    # Recent journeys
-    journeys = get_recent_journeys(5)
-    if journeys:
-        msg_parts.append("\nRecent journeys (may have relevant implementation details):")
-        for j in journeys:
-            msg_parts.append(f"  - {j['name']} ({j['path']})")
+    # Try to get conversation context
+    conv_context = input_data.get('conversation_context', '')
+    if conv_context:
+        context_text = conv_context
 
-    # Patterns summary
-    patterns = get_patterns_summary()
-    if patterns:
-        pattern_str = ', '.join(f"{v} {k}" for k, v in patterns.items())
-        msg_parts.append(f"\nPatterns indexed: {pattern_str}")
-        msg_parts.append("  (Use /knowledge-search to find relevant patterns)")
+    # Also check for any prompt/description in tool input
+    tool_input = input_data.get('tool_input', {})
+    if isinstance(tool_input, dict):
+        for key in ['prompt', 'description', 'query', 'task']:
+            if key in tool_input:
+                context_text += ' ' + str(tool_input[key])
 
-    # Facts count
-    facts = get_facts_count()
-    if facts > 0:
-        msg_parts.append(f"\nFacts: {facts} entries")
+    # If no context available, try to read from recent assistant thinking
+    if not context_text:
+        # Fall back to showing recent journeys
+        context_text = ""
 
-    if len(msg_parts) > 1:
-        msg_parts.append("\nTip: Read relevant knowledge files before designing your plan.")
+    keywords = extract_keywords(context_text)
+
+    # If we have keywords, search; otherwise show recent files
+    if len(keywords) >= 2:
+        matches = search_knowledge(keywords)
+    else:
+        matches = {'patterns': [], 'files': []}
+
+    msg_parts = []
+
+    # Show matched patterns
+    if matches['patterns']:
+        msg_parts.append(">> RELEVANT PATTERNS FOUND:")
+        for p in matches['patterns'][:5]:
+            msg_parts.append(f"  {p['text']}")
+
+    # Show matched files
+    if matches['files']:
+        if msg_parts:
+            msg_parts.append("")
+        msg_parts.append(">> RELEVANT KNOWLEDGE FILES:")
+        for f in matches['files'][:5]:
+            msg_parts.append(f"  - {f['title']}")
+            msg_parts.append(f"    Path: {f['path']}")
+            if f['keywords']:
+                msg_parts.append(f"    Matched: {', '.join(f['keywords'])}")
+
+    # If no matches but knowledge exists, show what's available
+    if not matches['patterns'] and not matches['files']:
+        try:
+            data = json.loads(knowledge_json.read_text(encoding='utf-8'))
+            pattern_count = len(data.get('patterns', []))
+            file_count = len(data.get('files', {}))
+
+            if pattern_count > 0 or file_count > 0:
+                msg_parts.append(">> KNOWLEDGE BASE AVAILABLE:")
+                if pattern_count:
+                    msg_parts.append(f"  - {pattern_count} patterns indexed")
+                if file_count:
+                    msg_parts.append(f"  - {file_count} knowledge files")
+                msg_parts.append("  Use /knowledge-search <query> to find relevant entries")
+        except:
+            pass
+
+    if msg_parts:
+        msg_parts.append("")
+        msg_parts.append("Read relevant files before designing your plan.")
         print(json.dumps({
             "continue": True,
             "message": "\n".join(msg_parts)
