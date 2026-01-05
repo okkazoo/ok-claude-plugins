@@ -281,10 +281,14 @@ def get_patterns(pattern_type: Optional[str] = None, search: Optional[str] = Non
     # Filter by search
     if search:
         search_lower = search.lower()
+        def context_matches(ctx, search_str):
+            if isinstance(ctx, str):
+                return search_str in ctx.lower()
+            return any(search_str in c.lower() for c in ctx)
         patterns = [
             p for p in patterns
             if search_lower in p.get('pattern', '').lower()
-            or search_lower in p.get('context', '').lower()
+            or context_matches(p.get('context', []), search_lower)
         ]
 
     return patterns
@@ -308,7 +312,12 @@ def search_patterns(query: str, limit: int = 10) -> List[Dict]:
     for p in patterns:
         # Score based on word overlap
         pattern_words = set(p.get('pattern', '').lower().split())
-        context_words = set(p.get('context', '').lower().replace(',', ' ').split())
+        # Handle context as list or string
+        context = p.get('context', [])
+        if isinstance(context, str):
+            context_words = set(context.lower().replace(',', ' ').split())
+        else:
+            context_words = set(c.lower() for c in context)
         all_words = pattern_words | context_words
 
         overlap = len(query_words & all_words)
