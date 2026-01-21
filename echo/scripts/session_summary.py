@@ -13,13 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any
 
-
-def get_worklog_dir() -> Path:
-    """Get the worklog directory, creating it if needed."""
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
-    worklog_dir = Path(project_dir) / ".claude" / "worklog"
-    worklog_dir.mkdir(parents=True, exist_ok=True)
-    return worklog_dir
+from config import get_worklog_dir, log_verbose
 
 
 def get_logs_dir() -> Path:
@@ -212,6 +206,11 @@ def main():
             # Update processed entries
             processed.update(newly_processed)
             save_processed_entries(worklog_dir, processed)
+
+            # Verbose output
+            task_count = len([t for t in tasks if t.get("ts") in newly_processed])
+            edit_count = len([e for e in edits if e.get("ts") in newly_processed])
+            log_verbose(f"✓ Session saved: {task_count} tasks, {edit_count} edits")
 
         # Clear current tasks
         clear_current_tasks(worklog_dir)

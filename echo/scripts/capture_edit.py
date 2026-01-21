@@ -12,13 +12,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-
-def get_worklog_dir() -> Path:
-    """Get the worklog directory, creating it if needed."""
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
-    worklog_dir = Path(project_dir) / ".claude" / "worklog"
-    worklog_dir.mkdir(parents=True, exist_ok=True)
-    return worklog_dir
+from config import get_worklog_dir, log_verbose
 
 
 def get_logs_dir() -> Path:
@@ -73,6 +67,10 @@ def main():
 
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
+
+        # Verbose output
+        filename = Path(file_path).name
+        log_verbose(f"✓ {operation.capitalize()}: {filename}")
 
     except Exception:
         # Fail silently - never break the workflow

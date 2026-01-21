@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""
+capture_structure.py - Captures class/function definitions on Write/Edit
+
+Parses file content for structural elements (classes, functions, etc.)
+and logs them for later consolidation.
+"""
+
+import json
+import os
+import re
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+
+from config import get_worklog_dir, log_verbose
+
+
+# Patterns to detect structural elements by file extension
+PATTERNS = {
+    # Python
+    ".py": [
+        (r"^class\s+(\w+)", "class"),
+        (r"^def\s+(\w+)", "function"),
+        (r"^async\s+def\s+(\w+)", "async_function"),
+    ],
+    # TypeScript/JavaScript
+    ".ts": [
+        (r"^export\s+class\s+(\w+)", "class"),
+        (r"^class\s+(\w+)", "class"),
+        (r"^export\s+interface\s+(\w+)", "interface"),
+        (r"^interface\s+(\w+)", "interface"),
+        (r"^export\s+type\s+(\w+)", "type"),
+        (r"^type\s+(\w+)", "type"),
+        (r"^export\s+(?:async\s+)?function\s+(\w+)", "function"),
+        (r"^(?:async\s+)?function\s+(\w+)", "function"),
+        (r"^export\s+const\s+(\w+)\s*=\s*(?:async\s*)?\(", "arrow_function"),
+        (r"^const\s+(\w+)\s*=\s*(?:async\s*)?\(", "arrow_function"),
+    ],
+    ".tsx": [
+        (r"^export\s+class\s+(\w+)", "class"),
+        (r"^class\s+(\w+)", "class"),
+        (r"^export\s+interface\s+(\w+)", "interface"),
+        (r"^interface\s+(\w+)", "interface"),
+        (r"^export\s+type\s+(\w+)", "type"),
+        (r"^type\s+(\w+)", "type"),
+        (r"^export\s+(?:async\s+)?function\s+(\w+)", "function"),
+        (r"^(?:async\s+)?function\s+(\w+)", "function"),
+        (r"^export\s+const\s+(\w+)\s*[=:]\s*(?:React\.)?(?:FC|memo|forwardRef)", "component"),
+        (r"^const\s+(\w+)\s*[=:]\s*(?:React\.)?(?:FC|memo|forwardRef)", "component"),
+        (r"^export\s+const\s+(\w+)\s*=\s*\([^)]*\)\s*(?:=>|:)", "component"),
+        (r"^const\s+(\w+)\s*=\s*\([^)]*\)\s*(?:=>|:)", "arrow_function"),
+    ],
+    ".js": [
+        (r"^class\s+(\w+)", "class"),
+        (r"^export\s+class\s+(\w+)", "class"),
+        (r"^(?:async\s+)?function\s+(\w+)", "function"),
+        (r"^export\s+(?:async\s+)?function\s+(\w+)", "function"),
+        (r"^const\s+(\w+)\s*=\s*(?:async\s*)?\(", "arrow_function"),
+        (r"^export\s+const\s+(\w+)\s*=\s*(?:async\s*)?\(", "arrow_function"),
+    ],
+    ".jsx": [
+        (r"^class\s+(\w+)", "class"),
+        (r"^export\s+class\s+(\w+)", "class"),
+        (r"^(?:async\s+)?function\s+(\w+)", "function"),
+        (r"^export\s+(?:async\s+)?function\s+(\w+)", "function"),
+        (r"^const\s+(\w+)\s*=\s*\([^)]*\)\s*=>", "component"),
+        (r"^export\s+const\s+(\w+)\s*=\s*\([^)]*\)\s*=>", "component"),
+    ],
+    # Go
+    ".go": [
+        (r"^type\s+(\w+)\s+struct", "struct"),
+        (r"^type\s+(\w+)\s+interface", "interface"),
+        (r"^func\s+(\w+)\s*\(", "function"),
+        (r"^func\s+\([^)]+\)\s+(\w+)\s*\(", "method"),
+    ],
+    # Rust
+    ".rs": [
+        (r"^pub\s+struct\s+(\w+)", "struct"),
+        (r"^struct\s+(\w+)", "struct"),
+        (r"^pub\s+enum\s+(\w+)", "enum"),
+        (r"^enum\s+(\w+)", "enum"),
+        (r"^pub\s+trait\s+(\w+)", "trait"),
+        (r"^trait\s+(\w+)", "trait"),
+        (r"^pub\s+(?:async\s+)?fn\s+(\w+)", "function"),
+        (r"^(?:async\s+)?fn\s+(\w+)", "function"),
+        (r"^impl(?:<[^>]+>)?\s+(\w+)", "impl"),
+    ],
+}
+
+# Also check these extensions with their base patterns
+EXTENSION_ALIASES = {
+    ".mts": ".ts",
+    ".cts": ".ts",
+    ".mjs": ".js",
+    ".cjs": ".js",
+}
+
+
+def get_patterns_for_file(file_path: str) -> List[tuple]:
+    """Get regex patterns for the given file extension."""
+    ext = Path(file_path).suffix.lower()
+    ext = EXTENSION_ALIASES.get(ext, ext)
+    return PATTERNS.get(ext, [])
+
+
+def extract_structures(content: str, file_path: str) -> List[Dict[str, Any]]:
+    """Extract structural elements from file content."""
+    patterns = get_patterns_for_file(file_path)
+    if not patterns:
+        return []
+
+    structures = []
+    seen = set()  # Avoid duplicates
+
+    for line in content.split("\n"):
+        stripped = line.strip()
+        for pattern, struct_type in patterns:
+            match = re.match(pattern, stripped)
+            if match:
+                name = match.group(1)
+                key = (name, struct_type)
+                if key not in seen:
+                    seen.add(key)
+                    structures.append({
+                        "name": name,
+                        "type": struct_type,
+                    })
+
+    return structures
+
+
+def get_content_from_hook_data(data: Dict) -> Optional[str]:
+    """Extract content from Write or Edit tool input."""
+    tool_name = data.get("tool_name", "")
+    tool_input = data.get("tool_input", {})
+
+    if tool_name == "Write":
+        return tool_input.get("content", "")
+    elif tool_name == "Edit":
+        # For Edit, we get new_string which is partial
+        # We'd need to read the full file to get complete picture
+        # For now, just capture what's in new_string
+        return tool_input.get("new_string", "")
+    elif tool_name == "MultiEdit":
+        # Combine all edits
+        edits = tool_input.get("edits", [])
+        return "\n".join(e.get("new_string", "") for e in edits)
+
+    return None
+
+
+def main():
+    try:
+        input_data = sys.stdin.read()
+        if not input_data.strip():
+            return
+
+        data = json.loads(input_data)
+
+        tool_name = data.get("tool_name", "")
+        tool_input = data.get("tool_input", {})
+
+        if tool_name not in ("Write", "Edit", "MultiEdit"):
+            return
+
+        file_path = tool_input.get("file_path", "")
+        if not file_path:
+            return
+
+        # Check if this file type is supported
+        if not get_patterns_for_file(file_path):
+            return
+
+        content = get_content_from_hook_data(data)
+        if not content:
+            return
+
+        structures = extract_structures(content, file_path)
+        if not structures:
+            return
+
+        # Make path relative
+        project_dir = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
+        try:
+            rel_path = os.path.relpath(file_path, project_dir)
+            if not rel_path.startswith(".."):
+                file_path = rel_path
+        except ValueError:
+            pass
+
+        # Log each structure
+        worklog_dir = get_worklog_dir()
+        structures_file = worklog_dir / "structures.jsonl"
+
+        timestamp = datetime.now().isoformat()
+
+        with open(structures_file, "a", encoding="utf-8") as f:
+            for struct in structures:
+                entry = {
+                    "ts": timestamp,
+                    "file": file_path,
+                    "name": struct["name"],
+                    "type": struct["type"],
+                    "operation": "created" if tool_name == "Write" else "modified",
+                }
+                f.write(json.dumps(entry) + "\n")
+
+        # Verbose output
+        names = ", ".join(s["name"] for s in structures[:3])
+        if len(structures) > 3:
+            names += f" +{len(structures) - 3} more"
+        log_verbose(f"✓ Learned: {names} in {Path(file_path).name}")
+
+    except Exception:
+        # Fail silently
+        pass
+
+
+if __name__ == "__main__":
+    main()

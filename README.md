@@ -16,6 +16,7 @@ A collection of plugins for Claude Code by OKKazoo.
 
 | Plugin | Description |
 |--------|-------------|
+| [echo](./echo/) | Session intelligence with activity tracking, structure capture, and worklog summaries |
 | [ok-know](./ok-know/) | Knowledge management with WIP tracking, save points, and auto-indexing |
 
 ## License

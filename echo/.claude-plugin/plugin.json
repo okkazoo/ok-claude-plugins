@@ -1,18 +1,18 @@
 {
-  "name": "worklog",
-  "version": "1.0.1",
-  "description": "Autonomous activity tracking - logs all file changes and user tasks without relying on Claude to decide what's worth remembering",
+  "name": "echo",
+  "version": "2.0.0",
+  "description": "Autonomous knowledge capture - remembers code structures, search patterns, and activity to help Claude navigate your codebase",
   "author": {"name": "okkazoo"},
-  "keywords": ["memory", "activity", "tracking", "context"],
-  "repository": "https://github.com/okkazoo/ok-claude-plugins",
+  "keywords": ["memory", "knowledge", "structure", "context", "navigation"],
+  "repository": "https://github.com/okkazoo/echo",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/load_context.py",
-            "timeout": 5,
+            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/consolidate_structure.py",
+            "timeout": 10,
             "once": true
           }
         ]
@@ -36,6 +36,21 @@
           {
             "type": "command",
             "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/capture_edit.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/capture_structure.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/capture_search.py",
             "timeout": 5
           }
         ]
