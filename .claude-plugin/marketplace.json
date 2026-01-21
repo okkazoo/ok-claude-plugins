@@ -9,6 +9,12 @@
       "source": "./ok-know/",
       "description": "Persistent knowledge management with work-in-progress tracking, save points, and auto-indexing",
       "version": "1.10.1"
+    },
+    {
+      "name": "worklog",
+      "source": "./worklog/",
+      "description": "Autonomous activity tracking - logs all file changes and user tasks without relying on Claude to decide what's worth remembering",
+      "version": "1.0.1"
     }
   ]
 }
