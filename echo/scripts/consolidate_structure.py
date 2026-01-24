@@ -58,18 +58,25 @@ def grep_exists(file_path: str, name: str) -> bool:
 def consolidate_structures(entries: List[Dict]) -> Dict[str, List[Dict]]:
     """
     Consolidate structure entries by file, keeping only verified ones.
-    Returns: {file_path: [{name, type}, ...]}
+    Returns: {file_path: [{name, type, task_hint}, ...]}
     """
-    # Group by file
-    by_file: Dict[str, Dict[str, str]] = defaultdict(dict)
+    # Group by file, keeping task hints
+    # Key: (file_path, name) -> {type, task_hint}
+    by_file: Dict[str, Dict[str, Dict]] = defaultdict(dict)
 
     for entry in entries:
         file_path = entry.get("file", "")
         name = entry.get("name", "")
         struct_type = entry.get("type", "")
+        task_hint = entry.get("task_hint", "")
 
         if file_path and name:
-            by_file[file_path][name] = struct_type
+            # Keep the most recent task_hint if one exists
+            existing = by_file[file_path].get(name, {})
+            by_file[file_path][name] = {
+                "type": struct_type,
+                "task_hint": task_hint or existing.get("task_hint", "")
+            }
 
     # Verify and consolidate
     verified: Dict[str, List[Dict]] = {}
@@ -79,9 +86,13 @@ def consolidate_structures(entries: List[Dict]) -> Dict[str, List[Dict]]:
             continue
 
         valid_structures = []
-        for name, struct_type in structures.items():
+        for name, info in structures.items():
             if grep_exists(file_path, name):
-                valid_structures.append({"name": name, "type": struct_type})
+                valid_structures.append({
+                    "name": name,
+                    "type": info["type"],
+                    "task_hint": info["task_hint"]
+                })
 
         if valid_structures:
             verified[file_path] = valid_structures
@@ -120,8 +131,7 @@ def consolidate_searches(entries: List[Dict]) -> Dict[str, Set[str]]:
 
 def generate_structure_md(
     structures: Dict[str, List[Dict]],
-    searches: Dict[str, Set[str]],
-    recent_activity: str
+    searches: Dict[str, Set[str]]
 ) -> str:
     """Generate the structure.md content."""
     lines = [
@@ -131,13 +141,15 @@ def generate_structure_md(
     ]
 
     # Group structures by directory
-    by_dir: Dict[str, List[Tuple[str, str, str]]] = defaultdict(list)
+    by_dir: Dict[str, List[Tuple[str, str, str, str]]] = defaultdict(list)
     for file_path, structs in structures.items():
         directory = str(Path(file_path).parent)
         if directory == ".":
             directory = "(root)"
         for s in structs:
-            by_dir[directory].append((Path(file_path).name, s["name"], s["type"]))
+            # Include task context if available
+            task_hint = s.get("task_hint", "")
+            by_dir[directory].append((Path(file_path).name, s["name"], s["type"], task_hint))
 
     if by_dir:
         lines.append("## Known Structures")
@@ -148,13 +160,20 @@ def generate_structure_md(
             lines.append(f"### `{directory}/`")
 
             # Group by file
-            by_file: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
-            for filename, name, struct_type in items:
-                by_file[filename].append((name, struct_type))
+            by_file: Dict[str, List[Tuple[str, str, str]]] = defaultdict(list)
+            for filename, name, struct_type, task_hint in items:
+                by_file[filename].append((name, struct_type, task_hint))
 
             for filename in sorted(by_file.keys()):
                 structs = by_file[filename]
-                struct_str = ", ".join(f"{name} ({t})" for name, t in structs[:5])
+                # Format: name (type) [task keywords if available]
+                parts = []
+                for name, t, hint in structs[:5]:
+                    entry = f"{name} ({t})"
+                    if hint:
+                        entry += f" [{hint}]"
+                    parts.append(entry)
+                struct_str = ", ".join(parts)
                 if len(structs) > 5:
                     struct_str += f" +{len(structs) - 5} more"
                 lines.append(f"- `{filename}`: {struct_str}")
@@ -173,11 +192,6 @@ def generate_structure_md(
                 pattern_str += f" +{len(patterns) - 5} more"
             lines.append(f"- `{directory}/`: {pattern_str}")
 
-        lines.append("")
-
-    if recent_activity:
-        lines.append("## Recent Activity")
-        lines.append(recent_activity)
         lines.append("")
 
     if not by_dir and not searches:
@@ -230,6 +244,7 @@ def save_verified_structures(worklog_dir: Path, structures: Dict[str, List[Dict]
                     "file": file_path,
                     "name": s["name"],
                     "type": s["type"],
+                    "task_hint": s.get("task_hint", ""),
                     "verified": True,
                 }
                 f.write(json.dumps(entry) + "\n")
@@ -253,11 +268,8 @@ def main():
         structures = consolidate_structures(structures_raw)
         searches = consolidate_searches(searches_raw)
 
-        # Load recent activity
-        recent_activity = load_recent_activity(worklog_dir)
-
-        # Generate structure.md
-        structure_content = generate_structure_md(structures, searches, recent_activity)
+        # Generate structure.md (no longer includes recent activity - that's in index.md)
+        structure_content = generate_structure_md(structures, searches)
 
         structure_file = worklog_dir / "structure.md"
         with open(structure_file, "w", encoding="utf-8") as f:

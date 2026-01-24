@@ -104,13 +104,12 @@ def generate_summary(tasks: List[Dict], edits: List[Dict], processed: set) -> tu
             main_task = main_task[:100] + "..."
         lines.append(f"**Task**: {main_task}")
 
-    # Group edits by operation type
-    created = []
-    modified = []
+    # Group edits by operation type (use sets to deduplicate)
+    created = set()
+    modified = set()
 
     for edit in new_edits:
         file_path = edit.get("file_path", "")
-        description = edit.get("description", "")
         operation = edit.get("operation", "modified")
 
         # Make path relative if possible
@@ -122,21 +121,17 @@ def generate_summary(tasks: List[Dict], edits: List[Dict], processed: set) -> tu
         except ValueError:
             pass
 
-        entry = f"`{file_path}`"
-        if description:
-            entry += f" - {description}"
-
         if operation == "created":
-            created.append(entry)
+            created.add(file_path)
         else:
-            modified.append(entry)
+            modified.add(file_path)
 
-    # Add file changes
-    for item in created:
-        lines.append(f"- **Created**: {item}")
+    # Add file changes (sorted for consistent output)
+    for item in sorted(created):
+        lines.append(f"- **Created**: `{item}`")
 
-    for item in modified:
-        lines.append(f"- **Modified**: {item}")
+    for item in sorted(modified):
+        lines.append(f"- **Modified**: `{item}`")
 
     lines.append("")  # Blank line after entry
 

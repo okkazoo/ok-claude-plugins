@@ -17,6 +17,57 @@ from typing import List, Dict, Any, Optional
 from config import get_worklog_dir, log_verbose
 
 
+def get_task_keywords() -> str:
+    """Extract keywords from current task for correlation."""
+    try:
+        worklog_dir = get_worklog_dir()
+        tasks_file = worklog_dir / ".current_tasks"
+
+        if not tasks_file.exists():
+            return ""
+
+        # Read most recent task
+        with open(tasks_file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        if not lines:
+            return ""
+
+        # Parse most recent task
+        import json
+        last_task = json.loads(lines[-1].strip())
+        prompt = last_task.get("prompt", "")
+
+        if not prompt:
+            return ""
+
+        # Extract meaningful keywords (skip common words)
+        stop_words = {
+            "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+            "have", "has", "had", "do", "does", "did", "will", "would", "could",
+            "should", "may", "might", "must", "shall", "can", "need", "to", "of",
+            "in", "for", "on", "with", "at", "by", "from", "as", "into", "through",
+            "and", "or", "but", "if", "then", "else", "when", "where", "why", "how",
+            "all", "each", "every", "both", "few", "more", "most", "other", "some",
+            "such", "no", "not", "only", "same", "so", "than", "too", "very", "just",
+            "also", "now", "here", "there", "this", "that", "these", "those", "it",
+            "its", "i", "me", "my", "we", "our", "you", "your", "he", "she", "they",
+            "them", "what", "which", "who", "whom", "get", "make", "like", "want",
+            "could", "please", "change", "add", "update", "fix", "modify", "create",
+        }
+
+        # Tokenize and filter
+        import re
+        words = re.findall(r'\b[a-zA-Z]{3,}\b', prompt.lower())
+        keywords = [w for w in words if w not in stop_words]
+
+        # Return top 3-4 keywords
+        return " ".join(keywords[:4])
+
+    except Exception:
+        return ""
+
+
 # Patterns to detect structural elements by file extension
 PATTERNS = {
     # Python
@@ -190,11 +241,12 @@ def main():
         except ValueError:
             pass
 
-        # Log each structure
+        # Log each structure with task correlation
         worklog_dir = get_worklog_dir()
         structures_file = worklog_dir / "structures.jsonl"
 
         timestamp = datetime.now().isoformat()
+        task_hint = get_task_keywords()
 
         with open(structures_file, "a", encoding="utf-8") as f:
             for struct in structures:
@@ -203,6 +255,7 @@ def main():
                     "file": file_path,
                     "name": struct["name"],
                     "type": struct["type"],
+                    "task_hint": task_hint,
                     "operation": "created" if tool_name == "Write" else "modified",
                 }
                 f.write(json.dumps(entry) + "\n")
