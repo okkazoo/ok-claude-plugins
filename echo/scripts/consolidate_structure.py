@@ -129,11 +129,14 @@ def consolidate_searches(entries: List[Dict]) -> Dict[str, Set[str]]:
     return by_dir
 
 
+MAX_STRUCTURE_MD_CHARS = 3000
+
+
 def generate_structure_md(
     structures: Dict[str, List[Dict]],
     searches: Dict[str, Set[str]]
 ) -> str:
-    """Generate the structure.md content."""
+    """Generate the structure.md content, capped at MAX_STRUCTURE_MD_CHARS."""
     lines = [
         "# Project Structure (auto-generated)",
         f"*Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*",
@@ -198,7 +201,19 @@ def generate_structure_md(
         lines.append("*No structural knowledge captured yet. Will build as you work.*")
         lines.append("")
 
-    return "\n".join(lines)
+    result = "\n".join(lines)
+
+    # Cap output to avoid bloating SessionStart context
+    if len(result) > MAX_STRUCTURE_MD_CHARS:
+        struct_count = sum(len(s) for s in structures.values())
+        result = result[:MAX_STRUCTURE_MD_CHARS - 80]
+        # Find last complete line
+        last_newline = result.rfind("\n")
+        if last_newline > 0:
+            result = result[:last_newline]
+        result += f"\n\n*... truncated ({struct_count} total structures, showing top entries)*\n"
+
+    return result
 
 
 def load_recent_activity(worklog_dir: Path, max_entries: int = 5) -> str:
